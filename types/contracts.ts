@@ -2,53 +2,69 @@ export type Bilingual = { en: string; es: string };
 
 export type Question = {
   id: string;
-  type: string;
-  weakSpotTag: string;
-  en: string;
-  es: string;
+  type: string; // conflict, reliability, client_care, safety_physical, why_this_job, availability
+  source: "bank" | "posting" | "followup";
+  textEn: string;
+  textEs: string;
 };
 
-export type DeliveryMetrics = {
-  startDelayMs: number;
-  longPauseCount: number;
-  wordsPerMinute: number;
-  restartCount: number;
-  hedgePhrases: string[];
-  unclearWords: string[];
+export type Word = {
+  text: string;
+  start: number | null; // seconds
+  end: number | null;
+  type?: string;
 };
 
-export type ContentFeedback = {
-  good: Bilingual;
-  fix: Bilingual;
-  sampleAnswer: Bilingual;
-  detailsUsed: string[];
+export type NextAction = {
+  kind: "retry" | "practise" | "followup" | "next_question" | "finish";
+  reason: Bilingual;
+  textEn: string;
+  textEs: string;
 };
 
 export type DeliveryFeedback = {
   clarity: Bilingual;
   confidence: Bilingual;
   naturalness: Bilingual;
-  practiceNext: Bilingual;
+  practiseNext: Bilingual;
 };
 
-export type AnswerFeedback = {
-  content: ContentFeedback;
-  delivery: DeliveryFeedback | null;
-  weakSpotTag: string | null;
+export type Feedback = {
+  content: {
+    good: Bilingual;
+    fix: Bilingual;
+    sampleAnswerEn: string;
+    usedDetails: string[];
+  };
+  delivery: DeliveryFeedback | null; // null for Spanish answers
+  weakSpots: string[];
+  nextAction: NextAction;
+};
+
+// What Preetam's /answer returns
+export type AnswerResponse = {
+  transcript: string;
+  language?: string;
+  words: Word[];
+  timeUnit?: "seconds";
+  feedback: Feedback;
+  memory?: unknown;
+  turnId?: string;
 };
 
 export type Turn = {
   question: Question;
   transcript: string;
-  metrics: DeliveryMetrics | null;
-  feedback: AnswerFeedback;
+  feedback: Feedback;
+  at: string;
 };
 
 export type Session = {
   sessionId: string;
   learnerId: string;
   role: string;
-  posting: string | null;
+  jobPosting: string | null;
+  pendingQuestion: Question | null; // the question she is answering now
   turns: Turn[];
   startedAt: string;
 };
@@ -56,24 +72,21 @@ export type Session = {
 export type LearnerProfile = {
   learnerId: string;
   stories: string[];
-  weakSpots: string[];
-};
-
-export type ProgressEntry = {
-  sessionId: string;
-  date: string;
-  avgStartDelayMs: number;
-  avgLongPauses: number;
-  avgWordsPerMinute: number;
-  contentFixCount: number;
+  weakSpots: string[]; // free text from Gemini
+  weakTypes: string[]; // question types she needs more practice on
 };
 
 export type SessionStartResponse = {
+  sessionId: string;
   session: Session;
   profile: LearnerProfile;
-  firstQuestion: Question;
+  question: Question;
   memoryNote: Bilingual | null;
 };
 
-export type CoachRequest = { sessionId: string; questionId: string; textEs: string };
-export type CoachResponse = { replyEs: string };
+export type NextQuestionResponse = {
+  question: Question | null;
+  done: boolean;
+  kind: NextAction["kind"] | "start";
+  memoryNote: Bilingual | null;
+};
