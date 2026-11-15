@@ -38,7 +38,7 @@ Originality is one of the four judging criteria, and mock-interview apps are com
 2. **Answers at her English level.** A sample answer she can't say out loud is useless, so we keep to words she already uses.
 3. **Coaching in her language.** The practice is in English; the explanation is in Spanish. She can also step out of the interview at any point, ask the coach a question in Spanish, and step back in.
 4. **Memory across sessions.** It remembers her stories and her weak spots and comes back to them.
-5. **A face that teaches.** The interviewer's mouth follows the real mouth shapes of the words, and she can replay a word slowly to see how it is said.
+5. **A face with slow audio replay.** She can replay a word slowly with timed captions and approximate mouth movement. Real mouth shapes require a separate lip-sync stage and are a stretch feature, not a current ElevenLabs capability.
 6. **Questions from the real job posting, and no resume needed.** She can paste the posting for the job she wants, and the interviewer asks about what it lists. Many of the workers we're building for have no resume, so voice comes first and documents are optional.
 7. **Feedback on delivery as well as content, without judging accent.** A chatbot only sees the words. We also tell her how clear, confident and natural she sounded, and we never mark her down for her accent.
 
@@ -50,7 +50,7 @@ Our Spanish-speaking teammate plays Maria from a seeded profile. The judge watch
 2. The interviewer face asks a question in English. Captions switch between English and Spanish, and there is a speed control.
 3. Maria answers out loud, in English, or in Spanish first to practice.
 4. Feedback appears in Spanish with English alongside. Content: one thing that was good, one thing to fix, and a stronger sample answer built only from details she said. Delivery: one line each on clarity, confidence and naturalness, and one thing to practise next.
-5. She replays the word the delivery check picked, slowly, and watches the mouth.
+5. She replays the word the delivery check picked, slowly, with captions; mouth movement is approximate.
 6. She taps "Preguntar al coach," asks in Spanish how to say something, hears the answer in Spanish, and returns to the interview where she left off.
 7. **The memory beat:** the next question returns to a weak spot from an earlier session ("Last time you struggled to describe a conflict with a coworker, so let's try that again").
 8. A progress view shows improvement across sessions.
@@ -65,7 +65,7 @@ Each answer gets two kinds of feedback, both in her language with English alongs
 
 | Dimension | What it means | What we look at | Example of what she sees |
 |---|---|---|---|
-| Clarity | Could the listener catch her words? | Pace; up to two key words the speech recogniser was unsure of | "Two words were hard to catch: 'medication' and 'schedule.' Watch the mouth and try them again." |
+| Clarity | Could the listener catch her words? | Pace; up to two key words the speech recogniser was unsure of | "Two words were hard to catch: 'medication' and 'schedule.' Listen slowly and try them again." |
 | Confidence | Did she sound sure of her answer? | Time before she starts; long pauses; restarts; filler sounds, if the service keeps them; apologising or hedging phrases | "You waited six seconds before starting. Begin with 'In my last job…' while you think." |
 | Naturalness | Did it sound like talking, not reciting? | Sentence length; word-for-word translated phrasing; rushed or memorised pacing | "'I am agree with the family' sounds more natural as 'I agree with the family.'" |
 
@@ -73,7 +73,7 @@ Each answer gets two kinds of feedback, both in her language with English alongs
 
 1. No pronunciation score, accent label or "native-like" rating appears anywhere.
 2. Progress is measured against her own earlier sessions, never against a native speaker.
-3. The recogniser's uncertainty is used only to choose words to practise. We say "the software didn't catch this word," not "you said it wrong."
+3. Transcription uncertainty is never used as an ability score; Gemini checks the original audio before suggesting words to practise. We say "the software didn't catch this word," not "you said it wrong."
 4. A word is flagged only if it matters to the answer, and never more than two per answer.
 5. The feedback prompt tells the model never to comment on accent or origin, and never to suggest she reduce her accent.
 6. Our Spanish-speaking teammate reviews the feedback wording before the demo.
@@ -101,19 +101,19 @@ Rehearse it twice end to end. Use a headset microphone because the hall is noisy
 | # | Component | What it does | Built with | Priority |
 |---|---|---|---|---|
 | 1 | Question bank | 8–10 hand-written questions per role, tagged by type | Static JSON | Must |
-| 2 | Interviewer brain | Picks the next question using her weak spots and, if given, the job posting | Claude | Must |
-| 3 | Voice out | Question audio plus mouth-shape timing | Amazon Polly | Must |
-| 4 | Voice in | Records her answer in the browser; the server returns the transcript with word timings and per-word confidence | Amazon Transcribe streaming | Must |
-| 5 | Feedback engine | Content: good point, one fix, stronger answer. Delivery: one line each on clarity, confidence and naturalness, and one thing to practise. Both languages | Claude, structured output | Must |
+| 2 | Interviewer brain | Picks the next question using her weak spots and, if given, the job posting | Gemini | Must |
+| 3 | Voice out | Question audio plus character timing | ElevenLabs | Must |
+| 4 | Voice in | Records her answer in the browser; ElevenLabs returns the answer transcript and word timestamps | ElevenLabs Speech to Text | Must |
+| 5 | Feedback engine | Content: good point, one fix, stronger answer. Delivery: one line each on clarity, confidence and naturalness, and one thing to practise. Both languages | Gemini, structured output | Must |
 | 6 | Learner memory | Stores stories and weak spots; returns her profile | Supermemory | Must |
 | 7 | Interview screen | Face, captions, microphone button, feedback panel | Next.js | Must |
-| 8 | Talking face | 2D mouth that follows Polly's timing; speed control; slow word replay | Mouth images in the browser | Should |
+| 8 | Talking face | Approximate 2D mouth following word timings; real visemes need separate lip sync; speed control; slow word replay | Mouth images in the browser | Should |
 | 9 | Session log and progress view | Her own numbers per session (start delay, pauses, pace, content fixes), compared only with her earlier sessions | Local file or MongoDB Atlas | Should |
 | 10 | Demo seed and reset | Loads Maria with two earlier sessions | Script | Must |
-| 11 | Coach side conversation in Spanish | At the question or on the feedback screen she can step out, ask the coach in Spanish by voice or text, and step back in where she left off | Transcribe, Claude, a Spanish Polly voice | Should |
-| 12 | Job posting input | She pastes the posting text; questions and key vocabulary come from it. Falls back to the question bank | Text box, Claude | Should |
+| 11 | Coach side conversation in Spanish | At the question or on the feedback screen she can step out, ask the coach in Spanish by voice or text, and step back in where she left off | ElevenLabs STT, Gemini, ElevenLabs TTS | Should |
+| 12 | Job posting input | She pastes the posting text; questions and key vocabulary come from it. Falls back to the question bank | Text box, Gemini | Should |
 | 13 | Resume upload | Optional. Adds her work history to memory so questions and sample answers can draw on it | File upload, Supermemory | Could |
-| 14 | Delivery analyser | Turns word timings and confidence into pace, pauses, start delay and a short list of words the recogniser missed, then passes them to the feedback engine | Plain code | Must |
+| 14 | Delivery analyser | Assesses the recorded answer audio plus its STT transcript/timestamp JSON for observable delivery patterns | Gemini audio input and structured output | Must |
 
 ### Build order, with a check for each step
 
@@ -122,91 +122,50 @@ Rehearse it twice end to end. Use a headset microphone because the hall is noisy
 3. **Delivery (14):** our teammate gives one answer fast and one with long pauses; the feedback names the difference, and neither mentions accent.
 4. **Memory (6, 10):** after a restart, the first question refers to last session's weak spot.
 5. **Job posting (12):** paste a real home health aide posting; at least one question names a requirement from it.
-6. **Face (8):** the mouth closes on "m", "b" and "p" sounds, in sync. Cap this at two hours.
+6. **Face (8):** optional approximate mouth movement follows audio playback. Real phonetic mouth shapes require separate lip sync. Cap animation work at two hours.
 7. **Progress view (9):** the full demo runs twice without touching code.
 8. **Resume (13), only if everything above works:** upload a one-page resume; the next question refers to a job listed on it.
 9. **Submission:** see the checklist below.
 
-### Who does what (two builders)
+### Who does what (three builders)
 
-Builder A owns the API (server routes and outside services). Builder B owns the screen (everything in the browser). Agree the contract below first, so B can build against fake data while A builds the real routes.
+The current flow is **ElevenLabs TTS -> recorded learner answer -> ElevenLabs STT -> Gemini assessment and next action -> Supermemory -> next spoken prompt**. Gemini receives the original answer audio and its transcript/timestamp JSON together. The old Amazon Transcribe/Claude split is superseded.
 
-#### Do first, together (30 minutes)
-
-- [ ] Create the repo and the Next.js app; add API keys to a local env file that is not committed
-- [ ] Agree the request and response shapes for the routes below, and save one fake JSON response for each
-- [ ] Start the README with a line crediting the AI tools used (required by the rules)
-
-| Route | Takes | Returns |
+| Owner | Scope | Start now |
 |---|---|---|
-| `POST /api/session/start` | learner id, role, optional job posting | session id, her profile (stories, weak spots), first question |
-| `POST /api/question/next` | session id | question id, text in English and Spanish, question type |
-| `POST /api/speak` | text, speed | audio, mouth-shape timings, word timings |
-| `POST /api/answer` | audio recording, session id, question id, language | transcript, delivery numbers, content feedback, delivery feedback, word to practise |
-| `GET /api/progress` | learner id | her numbers per session |
-| `POST /api/coach` | Spanish recording or typed text, session id, question id, stage | what was heard, the coach's reply in Spanish, English phrases to practise, audio |
+| **Preetam: voice backend** | Implemented Python TTS/STT, Gemini audio/JSON assessment handoff, initial Supermemory integration, FastAPI `/speak` and `/answer`, and usage docs | Verify both endpoints with real credentials/audio and hand off `elevenlabs/USAGE.md` |
+| **Teammate 1: intelligence and memory** | Gemini prompts/schema, content/delivery feedback, next-action decisions, question bank, Supermemory, session routes, Spanish coach, progress data and seed/reset | Review the sample's `Assessment` schema, write bank questions, integrate profile/history and session coordination |
+| **Teammate 2: app and screens** | Next.js scaffold/shared types, browser microphone recording/upload, audio playback, language/repeat/slow controls, screens, navigation, coach/progress panels and endpoint integration | Build browser recorder/player and connect to Preetam's endpoints using `elevenlabs/USAGE.md` |
 
-#### Builder A: API
+Detailed handoffs and file ownership are in `ARCHITECTURE.md` under Build plan. Preetam owns the Python `/speak` and `/answer` endpoints. Teammate 2 owns browser recorder/player components and their integration. Teammate 1 owns the planned session/question/progress/coach routes and shared Gemini/memory logic. Teammate 2 owns layouts, navigation and rendering.
 
-- [ ] A1. Write the question bank for home health aide: 8–10 questions, tagged by type, in English and Spanish
-- [ ] A2. Content feedback from a typed answer (Claude, structured output), with the accent rules in the prompt
-- [ ] A3. `question/next`: pick from the bank using her weak spots
-- [ ] A4. `speak`: Polly audio plus mouth-shape timings, same voice for both calls
-- [ ] A5. `answer`: receive the recording and get a transcript with word timings and confidence
-- [ ] A6. Delivery analyser in plain code: pace, start delay, long pauses, up to two unclear key words
-- [ ] A7. Add delivery feedback (clarity, confidence, naturalness, one thing to practise) to the feedback call
-- [ ] A8. Memory: save stories and weak spots after each answer; load her profile at session start; keep a local fallback copy
-- [ ] A9. Session log and `progress`
-- [ ] A10. Seed and reset script: Maria, two earlier sessions, the agency job posting
-- [ ] A11. Use the pasted job posting when picking questions
-- [ ] A12. Only if time: resume upload into memory
-- [ ] A13. `coach`: Spanish question in, Claude answers as the coach with the turn's context, Spanish voice out
-- [ ] A14. Optional: Gemini behaviour notes from the recording, with a 4-second limit
+#### Local pipeline to start with
 
-#### Builder B: screen
+```bash
+python -m pip install -r elevenlabs/requirements.txt
+python elevenlabs/assess_answer.py elevenlabs/recordings/answer.wav --question "Tell me about a time you helped someone who was upset." --learner maria
+```
 
-- [ ] B1. Interview screen layout on fake data: face area, captions, microphone button, feedback panel
-- [ ] B2. Setup screen: pick the role, paste a job posting, choose "answer in Spanish first"
-- [ ] B3. Record the answer in the browser and send it to `answer`; show recording and thinking states
-- [ ] B4. Play the question audio; captions that switch between English and Spanish; speed control; repeat button
-- [ ] B5. Feedback panel, Spanish and English side by side: content block, then delivery block with the one thing to practise
-- [ ] B6. Talking face: mouth images that follow Polly's timings in sync with the audio (two-hour cap)
-- [ ] B7. Slow replay of the picked word with the mouth close up
-- [ ] B8. Progress view
-- [ ] B9. Demo polish: reset button, error messages, a recorded fallback video
-- [ ] B10. Coach panel: "Preguntar al coach" on the question and feedback screens, the side conversation, and "Volver a la entrevista"
+Record your own answer first and supply that file. Setup and env keys are in `elevenlabs/USAGE.md`. `answer_timestamps.json` belongs to the learner recording; the existing TTS `timestamps.json` belongs to generated question audio and must not be used as answer evidence.
 
-#### Together
+The sample returns transcript/timings and Gemini's bilingual content/delivery feedback, weak spots and next action. It loads/saves Supermemory when configured and clearly reports local fallback otherwise. The voice pipeline is exposed through FastAPI `/speak` and `/answer`; startup and frontend examples are in `elevenlabs/USAGE.md`. The app loop and live account verification remain.
 
-- [ ] Talk to two non-native English speakers (see "Validate tonight") while they are still around
-- [ ] Test Transcribe and the Gemini behaviour notes on our Spanish speaker's voice
-- [ ] Spanish speaker reviews the Spanish in the question bank and the feedback
-- [ ] Rehearse the full demo twice, with the headset microphone
-- [ ] Devpost write-up, README credits, two-minute video, submit
+#### Checkpoints
 
-#### Checkpoints (Saturday 4:30pm start, Sunday 11:00am deadline)
+1. Preetam runs the recorded-answer pipeline and shares the JSON shapes with the other two.
+2. Teammate 1 integrates Gemini and memory; Teammate 2 builds the app against example responses in parallel.
+3. Complete a spoken turn on the real screen, then demonstrate a follow-up and a remembered weak spot.
+4. Add Spanish coach, slow word replay, progress and demo seed/reset.
+5. Rehearse twice with the headset. Target submission at Sunday 10:30am MST, ahead of the 11:00am deadline listed above.
 
-| By | What works | Tasks |
-|---|---|---|
-| Sat 6:00pm | Repo, keys, agreed contract, fake responses, each service proven with a short script | Do first |
-| Sat 7:30pm | Typed answer returns content feedback on the real screen | A1–A3, B1–B2 |
-| Sat 10:00pm | A full spoken turn: she hears the question, answers aloud, sees feedback | A4–A5, B3–B5 |
-| Sun 12:30am | Delivery feedback and memory work; the face lip-syncs | A6–A8, B6 |
-| Sun 2:30am | Coach side conversation in Spanish works | A13, B10 |
-| Sun 4:00am | Session log, seeded Maria, job posting questions, slow word replay, progress view; Gemini kept or dropped | A9–A11, B7–B8 |
-| Sun 7:00am | Feature freeze: no new features after this | B9 |
-| Sun 9:00am | Two clean rehearsals done, video recorded | Together |
-| Sun 10:30am | Submitted, with 30 minutes to spare | Together |
+Cut resume upload, extra roles, external lip sync, posting generation, coach panel and mouth animation first. Keep Gemini's assessment, spoken turns, bilingual feedback and memory. All three handle user conversations, Spanish review with the Spanish speaker and submission. No test suite is requested.
 
-If a checkpoint slips by more than an hour, cut in this order: resume upload, extra roles, the Gemini layer, job-posting questions, the coach side conversation, then the moving mouth (keep a still face).
+### Decisions
 
-The detailed plan, with a done-when check for every task, is in `ARCHITECTURE.md` under "Build plan."
-
-### Open decisions
-
-- **Speech-to-text service: decided.** Amazon Transcribe streaming, since we have AWS credentials and it returns word timings and per-word confidence. Polly only speaks; it cannot transcribe. Details are in `ARCHITECTURE.md`.
-- **Gemini for behaviour:** an optional layer that listens to the recording and notes hesitation, rushing and trailing off. Test it on our teammate's voice first; drop it if the notes are vague.
-- **Session log:** a local file is fastest; MongoDB Atlas adds a prize entry for about an hour of work.
+- **Speech output and answer STT:** ElevenLabs; official SDK clients.
+- **Assessment and next-step decisions:** Gemini receives the recorded answer audio, answer transcript/timestamps, question and learner history. It assesses content and delivery together.
+- **Memory:** Supermemory per learner, supplemented by recent local turns. Save learner statements and model coaching as distinguishable fields.
+- **Session progress:** show the learner's own earlier feedback/weak spots. Numerical delivery charts require actual measured data; do not invent them from qualitative notes.
 
 ## Questions judges will ask
 
@@ -226,8 +185,7 @@ Judging criteria for all of them: Originality, Complexity, Functionality, Design
 - [JFFVentures] Best Hack for the Future of Work
 - Best Overall
 - Best Diversity/Equality
-- Best Use of AWS (Polly for voice and mouth timing, Transcribe for speech to text)
-- MLH Best Use of Gemini API (behaviour notes from the recording), if that layer survives testing
+- MLH Best Use of Gemini API (audio-based content/delivery assessment, coaching and next-action decisions)
 - Audience Vote
 - Rookie, if we qualify
 - Optional: MLH Best Use of MongoDB Atlas, Best Domain Name from GoDaddy Registry
@@ -267,7 +225,8 @@ Put one real quote in the pitch. If the answers don't match our problem statemen
 - JFFVentures: https://www.jffventures.vc/
 - Pace AI: https://www.paceapp.ai/
 - Brookings, "Investing in English Skills" (2014): https://www.brookings.edu/articles/investing-in-english-skills-the-limited-english-proficient-workforce-in-u-s-metropolitan-areas/
-- Amazon Polly speech marks: https://docs.aws.amazon.com/polly/latest/dg/speechmarks.html
+- ElevenLabs speech with character timing: https://elevenlabs.io/docs/api-reference/text-to-speech/convert-with-timestamps
 - Azure pronunciation assessment: https://learn.microsoft.com/en-ca/azure/ai-services/speech-service/how-to-pronunciation-assessment
-- Amazon Transcribe word-level confidence: https://docs.aws.amazon.com/transcribe/latest/dg/how-it-works.html
+- ElevenLabs speech to text: https://elevenlabs.io/docs/api-reference/speech-to-text/convert
+- Gemini audio input: https://ai.google.dev/gemini-api/docs/audio
 - Speech recognition on non-native speakers (SLaTE 2025): https://www.isca-archive.org/slate_2025/roll25_slate.pdf

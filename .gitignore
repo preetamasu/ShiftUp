@@ -6,4 +6,13 @@
 # Dependencies and build output
 node_modules/
 .next/
+<<<<<<< HEAD
 .data/
+=======
+
+# Local audio, transcripts and learner history
+elevenlabs/output/
+elevenlabs/recordings/
+venv/
+__pycache__/
+>>>>>>> main
