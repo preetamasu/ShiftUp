@@ -1,0 +1,4 @@
+[
+  { "sessionId": "s1", "date": "2026-11-01", "avgStartDelayMs": 6200, "avgLongPauses": 4, "avgWordsPerMinute": 88, "contentFixCount": 3 },
+  { "sessionId": "s2", "date": "2026-11-08", "avgStartDelayMs": 4100, "avgLongPauses": 2, "avgWordsPerMinute": 102, "contentFixCount": 2 }
+]

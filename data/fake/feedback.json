@@ -1,0 +1,36 @@
+{
+  "content": {
+    "good": {
+      "en": "You gave a real example with a clear result.",
+      "es": "Dio un ejemplo real con un resultado claro."
+    },
+    "fix": {
+      "en": "Say what you did first, then what happened.",
+      "es": "Diga primero lo que hizo y luego lo que pasó."
+    },
+    "sampleAnswer": {
+      "en": "My coworker and I disagreed about the schedule. I talked to her calmly, and we agreed to switch days.",
+      "es": "Mi compañera y yo no estábamos de acuerdo con el horario. Hablé con ella con calma y acordamos cambiar los días."
+    },
+    "detailsUsed": ["disagreed about the schedule", "talked to her", "switch days"]
+  },
+  "delivery": {
+    "clarity": {
+      "en": "Two words were hard to catch: 'medication' and 'schedule.' Listen slowly and try them again.",
+      "es": "Dos palabras fueron difíciles de captar: 'medication' and 'schedule'. Escúchelas despacio e inténtelas de nuevo."
+    },
+    "confidence": {
+      "en": "You waited six seconds before starting. Begin with 'In my last job...' while you think.",
+      "es": "Esperó seis segundos antes de empezar. Empiece con 'In my last job...' mientras piensa."
+    },
+    "naturalness": {
+      "en": "'I am agree' sounds more natural as 'I agree.'",
+      "es": "'I am agree' suena más natural como 'I agree'."
+    },
+    "practiceNext": {
+      "en": "Practice starting your answer within three seconds.",
+      "es": "Practique empezar su respuesta en menos de tres segundos."
+    }
+  },
+  "weakSpotTag": "coworker_conflict"
+}
