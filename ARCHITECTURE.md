@@ -1,10 +1,10 @@
 # Architecture
 
-Interview Practice in Your Language, sunhacks 2026. This is the build reference for the two builders. The product brief, demo script and task split are in `TEAM_BRIEF.md`.
+Interview Practice in Your Language, sunhacks 2026. This is the build reference for three builders: Preetam (voice), Teammate 1 (interview logic and data), and Teammate 2 (app and screens). The teammate labels are placeholders until their names are added. The product brief, demo script and task split are in `TEAM_BRIEF.md`.
 
 ## The design in one line
 
-Polly speaks, Transcribe listens for the words, plain code measures the delivery, Gemini listens for behaviour, Claude writes the feedback, and Supermemory remembers.
+ElevenLabs speaks, Transcribe listens for the words, plain code measures the delivery, Gemini listens for behaviour, Claude writes the feedback, and Supermemory remembers.
 
 ## Final flow
 
@@ -13,11 +13,11 @@ What Maria does on the left, what the system does on the right.
 | # | What Maria does | What the system does |
 |---|---|---|
 | 1 | Picks a role or pastes a job posting; chooses whether to answer in Spanish first | Loads her profile from Supermemory and picks the first question, starting with a past weak spot |
-| 2 | Watches the face ask the question in English; can switch captions, slow it down or repeat it | Polly supplies the voice and mouth timings; the browser animates the mouth |
+| 2 | Watches the face ask the question in English; can switch captions, slow it down or repeat it | ElevenLabs supplies audio and character timings; the browser highlights words and animates a simple mouth |
 | 3 | Taps and answers out loud | The browser records the answer and sends it to the server |
 | 4 | Waits a few seconds, seeing her transcript first | Transcribe returns words with timings; code measures pace, pauses and start delay; Gemini adds behaviour notes if it is quick enough; Claude writes the feedback |
 | 5 | Reads feedback in Spanish with English alongside: one good thing, one fix, a stronger answer from her own details, and a line each on clarity, confidence and naturalness | Nothing shown is a pronunciation score or a comment on accent |
-| 6 | Replays the one word to practise, slowly, watching the mouth | The same audio plays at half speed with the mouth in sync |
+| 6 | Replays the one word to practise, slowly | Cached word audio plays at half speed; any mouth movement is approximate |
 | 7 | Retries the answer or moves on | Her story, weak spot and numbers are saved to Supermemory and the session log |
 | 8 | Hears the next question | It is picked from her weak spots, the job posting, or as a follow-up to what she just said |
 | 9 | Opens the progress view at the end | It compares her only with her own earlier sessions |
@@ -37,8 +37,8 @@ The next time she starts a session, step 1 opens with what she struggled with la
 
 | Job | Service | Notes |
 |---|---|---|
-| Voice out (text to speech) and mouth timing | Amazon Polly | Polly only speaks. It cannot transcribe |
-| Voice in (speech to text) | Amazon Transcribe, streaming | Returns each word with start time, end time and a confidence from 0 to 1. Same AWS credentials as Polly |
+| Voice out (text to speech) and character timing | ElevenLabs | Character timestamps support captions; real visemes need a separate stage |
+| Voice in (speech to text) | Amazon Transcribe, streaming | Returns each word with start time, end time and a confidence from 0 to 1. Uses AWS credentials; ElevenLabs has its own key |
 | Delivery numbers | Our own code | Pace, start delay, pauses, unclear words. No model involved |
 | Behaviour observations from the recording | Gemini API (audio input) | Optional layer. Never blocks the answer. Enters the MLH Gemini prize |
 | Question picking and all learner-facing feedback | Claude Opus 5.5 (`claude-opus-5-5`), low effort, structured output | One model writes everything she reads, so the tone and the Spanish stay consistent |
@@ -62,22 +62,22 @@ Browser (Chrome)
 Next.js API routes (all keys stay on the server)
   /api/session/start   Supermemory profile -> first question
   /api/question/next   bank / posting / follow-up -> question
-  /api/speak           Polly audio + mouth timing
+  /api/speak           ElevenLabs audio + character/word timing
   /api/answer          Transcribe  ---+
                        Gemini (opt) --+--> delivery code --> Claude --> response
                        then, after responding: Supermemory + session log
   /api/progress        session log
-  /api/coach           Spanish side conversation: Transcribe -> Claude -> Polly
+  /api/coach           Spanish side conversation: Transcribe -> Claude -> ElevenLabs
   /api/demo/seed, /api/demo/reset
         |
         v
-Polly   Transcribe   Gemini   Claude   Supermemory   sessions.json
+ElevenLabs   Transcribe   Gemini   Claude   Supermemory   sessions.json
 ```
 
 ## One turn, step by step
 
 1. The server reads her profile and picks a question.
-2. The screen plays the question audio and moves the mouth on Polly's timings. Captions show English or Spanish.
+2. The screen plays the question audio and highlights words using ElevenLabs alignment. Captions show English or Spanish.
 3. Recording starts the moment the question audio ends, and stops when she taps the button.
 4. The recording goes to `/api/answer`. Transcribe and Gemini run at the same time on it.
 5. The delivery code turns Transcribe's word timings into numbers.
@@ -88,7 +88,7 @@ Target: under 8 seconds from the end of her answer to feedback on screen. Show t
 
 ## API contract
 
-Builder B can build against these shapes with fake data from the first hour.
+Teammate 2 can build against these shapes with example data from the first hour. Preetam owns `/api/speak`; Teammate 1 owns the other route files and calls Preetam's voice helpers where needed. See "Build plan" for the handoffs.
 
 ### `POST /api/session/start`
 
@@ -126,8 +126,9 @@ Builder B can build against these shapes with fake data from the first hour.
 // response
 {
   "audioBase64": "<mp3>",
-  "visemes": [{ "timeMs": 0, "value": "t" }, { "timeMs": 85, "value": "E" }],
-  "words":   [{ "timeMs": 0, "value": "Tell" }, { "timeMs": 210, "value": "me" }]
+  "visemes": [],
+  "mouthTimingSource": "none",
+  "words":   [{ "timeMs": 0, "endMs": 200, "value": "Tell" }, { "timeMs": 210, "endMs": 300, "value": "me" }]
 }
 ```
 
@@ -176,77 +177,31 @@ Multipart form: `audio` (16 kHz, mono, signed 16-bit PCM), `sessionId`, `questio
 
 Load or clear Maria: two earlier sessions, her stories and weak spots, and the agency job posting.
 
-## Voice out: Polly
+## Voice out: ElevenLabs
 
-- Each question needs two Polly calls with the same voice and the same text: one returns the audio, the other returns the timing data ("speech marks") for mouth shapes and words. Run them at the same time.
-- A different voice between the two calls makes the mouth drift out of sync.
-- Polly returns a symbol for each mouth shape. Group them into 8–10 mouth images; the mapping lives in `data/visemeMap.json`. The full symbol list is linked from Polly's speech marks page.
-- Generate the audio and timings for every bank question ahead of time and save them under `public/audio/`. The demo then does not depend on Polly for the questions it is most likely to ask.
+Preetam owns this layer. Use the official ElevenLabs client and its `text_to_speech.convert_with_timestamps(...)` method in the Python sample; let the SDK handle authentication and HTTP requests. One response contains MP3 audio as base64 plus character alignment. Start with `eleven_flash_v2_5` and a voice available to our account; test English questions and Spanish coach replies with our teammate.
 
-## Talking face: 2D lip sync at no cost
+The sample is `elevenlabs/sample.py`. It uses the ElevenLabs Python client and python-dotenv. Run `python -m pip install -r elevenlabs/requirements.txt`, then `python elevenlabs/sample.py` from the repository root. Set `ELEVENLABS_API_KEY` and `ELEVENLABS_VOICE_ID` in the root `.env`. It saves an MP3 and character-timing JSON in `elevenlabs/output/`. The installed Python SDK exposes the audio as `result.audio_base_64`. This sample is a standalone service check; the Next.js app adapter remains to be built using the official JavaScript SDK. Keep the Python sample simple; no extra Python web service is required by this plan.
 
-The face is not a video and uses no avatar service. It is a drawing that the browser animates in real time, so the animation itself costs nothing. The only metered part is Polly's speech, which stays inside the AWS free tier at our volume (see "Cost" below).
+- Keep the key on the server. ElevenLabs uses its own API key; AWS credentials still belong to Transcribe.
+- Group normalized character alignment into word start/end times for caption highlighting. Fall back to the original alignment if normalized alignment is absent.
+- ElevenLabs character timestamps are not phonemes or Polly-style visemes. Return `visemes: []` and `mouthTimingSource: "none"` until a separate mouth-timing stage exists. Never fabricate mouth shapes from spelling.
+- Generate the question bank ahead of time and cache audio with its alignment. Cache by text, voice, model and all synthesis settings.
+- The sample waits for the complete response. Streaming can be added later if measured latency requires it.
 
-### How the processing works
+## Talking face: approximate animation first
 
-1. **Draw the face once.** One SVG: head, eyes, eyebrows, and nine mouth shapes as separate groups, with only one visible at a time. Drawing them ourselves is free and avoids licensing questions. PNG images work the same way.
-2. **Get the timings.** For each line of speech, Polly returns a list of mouth-shape events, one JSON object per line, for example `{"time":125,"type":"viseme","value":"p"}`. The server parses them into the `visemes` array of the `speak` response.
-3. **Map Polly's symbols to our nine mouths.** US English uses 17 symbols plus `sil` for silence:
+The initial browser implementation can open the mouth during timed words and close it during gaps and pauses. The Python sample only generates audio and character timestamps. This is decorative animation, not pronunciation guidance. It cannot reliably show lip closure on m, b or p, or tongue placement.
 
-| Our mouth shape | Polly symbols | Sounds |
-|---|---|---|
-| Closed | `p`, `sil` | p, b, m, and silence |
-| Lip on teeth | `f` | f, v |
-| Tongue between teeth | `T` | th |
-| Tongue up | `l` | l |
-| Teeth nearly together | `t`, `s`, `k` | t, d, n, s, z, k, g, h |
-| Lips pushed forward | `S`, `r`, `u` | sh, ch, j, r, w, oo |
-| Round | `o`, `O` | oh, aw |
-| Wide | `i`, `e` | ee, ih, y, ay |
-| Open | `a`, `E`, `@` | ah, eh, uh |
+For actual mouth shapes, add a separate lip-sync stage to pre-generated bank audio, such as Rhubarb Lip Sync. That stage must produce the `visemes` events and matching mouth-image map before the original mouth-teaching feature can be claimed. A browser Web Audio analyser can alternatively drive a simple loudness animation; it also provides no phonetic guidance.
 
-   Keep closed, lip-on-teeth and tongue-between-teeth as separate shapes whatever else gets merged: those are the sounds a learner can actually see.
+### Speed control and slow replay
 
-4. **Animate from the audio clock.** While the audio plays, on every animation frame read the audio's current time, find the latest mouth event at or before it, and show that mouth:
-
-```ts
-// visemes: [{ timeMs, value }] sorted by time
-let i = 0
-function tick() {
-  const t = audio.currentTime * 1000
-  while (i + 1 < visemes.length && visemes[i + 1].timeMs <= t) i++
-  setMouth(visemeMap[visemes[i].value] ?? "open")
-  if (!audio.paused && !audio.ended) requestAnimationFrame(tick)
-  else setMouth("closed")
-}
-audio.onplay = () => { i = 0; requestAnimationFrame(tick) }
-```
-
-5. **Smooth it.** Ignore any mouth event shorter than about 60 milliseconds so the mouth doesn't flicker, and fade between shapes over 40–60 milliseconds with a CSS transition.
-6. **Make it feel alive.** A blink every 3–5 seconds and a small head movement cost a few lines and stop the face looking frozen while she thinks.
-
-### Speed control and slow replay, with no extra calls
-
-Because the loop follows the audio's own clock, changing the audio element's `playbackRate` slows the voice and the mouth together and keeps them in sync. Browsers keep the pitch by default.
-
-- **Speed control for the question:** set `playbackRate` to 0.75 or 1.
-- **Slow word replay:** the word comes from her answer, not the question, so request that one word from `speak` (a few characters), cache it, play it at 0.5, and zoom the mouth with a CSS transform.
-
-The `speed` field on `speak` is therefore optional. Use it only if slowed audio sounds too distorted.
+Follow `audio.currentTime` on every animation frame so captions and any available mouth events follow seeks, pauses and speed changes. Set `playbackRate` to 0.75 for slow questions or 0.5 for word replay. Generate a practice word once and replay the cached audio. The `speed` request field is retained as an optional playback hint, not a synthesis setting in this sample.
 
 ### Cost
 
-- Polly bills per character, and a timings request is billed like a speech request, so each line of speech costs its characters twice.
-- AWS's pricing page lists a free tier of 5 million characters a month for standard voices and 1 million a month for neural voices in the first 12 months. Outside it, standard is $4 and neural $16 per million characters. Check our own account's status.
-- A question is about 80 characters, so 160 with timings. Five hundred questions is 80,000 characters, far inside either allowance.
-- Bank questions are generated once by `scripts/pregenerate.ts` and served as files, and repeated requests are cached by text, voice and speed.
-
-### If Polly's timings are unavailable
-
-Both fallbacks are free:
-
-- **Loudness-driven mouth.** Read the audio's volume in the browser with a Web Audio analyser and switch between closed, half-open and open. It works with any audio, but it does not show real mouth shapes, so the slow replay loses its teaching value.
-- **Rhubarb Lip Sync.** An open-source tool that produces mouth timings from an audio file. It runs offline, so it suits the pre-generated bank audio, not live speech.
+Generation uses ElevenLabs credits according to the account's plan, selected model and text length. Confirm current pricing and available credits in the account before pre-generating the bank. Replaying saved audio makes no API calls. There is no longer a separate Polly speech-marks request or a Polly free-tier assumption.
 
 ## Coach side conversation in Spanish
 
@@ -262,7 +217,7 @@ The interviewer speaks only English, like a real one. At two points she can step
 1. She taps "Preguntar al coach" and speaks or types in Spanish.
 2. The recording goes to `/api/coach`. Transcribe runs with Spanish as the language.
 3. Claude answers in Spanish as the coach. It is given the current question, her last answer, the feedback she received, her profile and the side conversation so far.
-4. The reply is shown as text and spoken with a Spanish Polly voice. The same face can speak it; the label changes from "Interviewer" to "Coach" so the two roles stay distinct.
+4. The reply is shown as text and spoken with an ElevenLabs voice tested with Spanish. The same face can speak it; the label changes from "Interviewer" to "Coach" so the two roles stay distinct.
 5. She can keep asking. "Volver a la entrevista" returns her to the question or the feedback she left.
 
 ### Rules
@@ -294,13 +249,17 @@ Multipart form: `audio` (PCM, optional), `text` (optional, used when she types),
     "phrasesEn": [{ "en": "go above and beyond", "es": "hacer más de lo esperado" }]
   },
   "audioBase64": "<mp3>",
-  "visemes": [{ "timeMs": 0, "value": "s" }]
+  "words": [{ "timeMs": 0, "endMs": 300, "value": "Significa" }],
+  "visemes": [],
+  "mouthTimingSource": "none"
 }
 ```
 
-Spanish voices return their own symbol set for mouth shapes. Any symbol missing from our map falls back to the open mouth, which is good enough for the coach.
+Spanish speech uses the same character-alignment response shape. No real visemes are returned by ElevenLabs; the coach uses the same approximate mouth animation.
 
 ## Voice in: Transcribe
+
+Preetam owns browser capture, audio format conversion and the Transcribe helper. Teammate 1 calls that helper from `/api/answer` and `/api/coach`. ElevenLabs replaces Polly for voice output; speech recognition remains Amazon Transcribe in this plan.
 
 - Use the streaming interface. It accepts PCM, Ogg Opus or FLAC. Chrome's default recorder produces WebM, which streaming does not accept, so the browser captures raw samples and sends 16 kHz mono 16-bit PCM.
 - The server feeds the PCM into one streaming request in small chunks and collects the final results. Each word arrives with a start time, an end time and a confidence.
@@ -308,6 +267,8 @@ Spanish voices return their own symbol set for mouth shapes. Any symbol missing 
 - The batch interface would accept WebM, but it reads files from S3 and runs as a job. We have not found figures for how long a short clip takes, so we avoid it.
 
 ## Delivery numbers: our own code (`lib/delivery.ts`)
+
+Preetam owns these calculations; Teammate 1 turns their output into bilingual feedback through Claude.
 
 | Number | How it is computed | When it is mentioned (starting points, untested) |
 |---|---|---|
@@ -365,7 +326,7 @@ The same model picks the next question (see below). Use low effort for both call
 ```
 app/                       setup, interview and progress pages
 app/api/                   the routes above
-lib/polly.ts               speech + timings
+lib/elevenlabs.ts          speech + character/word timings
 lib/transcribe.ts          streaming speech to text
 lib/delivery.ts            delivery numbers
 lib/gemini.ts              behaviour notes (optional)
@@ -373,7 +334,7 @@ lib/claude.ts              question picking + feedback
 lib/memory.ts              Supermemory + local fallback
 lib/sessionLog.ts          sessions.json
 data/questions.hha.json    question bank
-data/visemeMap.json        Polly symbol -> mouth image
+data/visemeMap.json        optional external lip-sync symbol -> mouth image
 data/seed/maria.json       demo persona
 public/mouths/             mouth images
 public/audio/              pre-generated question audio + timings
@@ -383,20 +344,21 @@ scripts/pregenerate.ts     build public/audio
 
 ## Keys and permissions
 
-Kept in `.env.local`, which is git-ignored and never committed:
+The Python sample reads the root `.env`; the planned Next.js app uses `.env.local`. Both are git-ignored. Each builder sets the keys needed for their work locally; never put service keys in browser code or `NEXT_PUBLIC_` variables:
 
 - `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_REGION`
+- `ELEVENLABS_API_KEY`, `ELEVENLABS_VOICE_ID`, optional `ELEVENLABS_MODEL_ID`
 - `GEMINI_API_KEY`
 - `SUPERMEMORY_API_KEY`
 - `ANTHROPIC_API_KEY` (not needed if we reach Claude through Bedrock)
 
-The AWS user needs permission to call Polly's speech synthesis and Transcribe's streaming transcription.
+The AWS user needs permission for Transcribe streaming. The ElevenLabs key needs text-to-speech access and access to the selected voice and model.
 
 ## When a service fails
 
 | Service | What the user sees | What we do |
 |---|---|---|
-| Polly | The question as a caption, no voice | Bank questions use the pre-generated audio, so this only affects new questions |
+| ElevenLabs | The question as a caption, no voice | Bank questions use the pre-generated audio, so this only affects new questions |
 | Transcribe | "I didn't catch that. Try again." | No second speech-to-text service |
 | Gemini | Nothing different | Skipped after 4 seconds; Claude uses the numbers |
 | Claude | Her transcript and delivery numbers, with a retry button | |
@@ -405,112 +367,128 @@ The AWS user needs permission to call Polly's speech synthesis and Transcribe's 
 
 ## Prizes this architecture supports
 
-- Best Use of AWS: Polly and Transcribe.
+- Best Use of AWS: Transcribe (and Bedrock if used).
 - MLH Best Use of Gemini API: behaviour notes from the recording.
 - JFFVentures, Best Overall, Best Diversity/Equality: see `TEAM_BRIEF.md`.
 - Optional: MLH Best Use of MongoDB Atlas, by moving the session log there.
 
 ## Build plan
 
-Two builders. Builder A owns the API routes and outside services. Builder B owns everything in the browser. Written Saturday 4:45pm; submission closes Sunday 11:00am MST. Task numbers match the checklist in `TEAM_BRIEF.md`.
+Three builders work in parallel. Preetam owns voice end to end. Teammate 1 owns interview logic, feedback and persistence. Teammate 2 owns the Next.js scaffold, screens and app integration. These are planned assignments, not claims that the features are implemented. The current Python voice sample lives in `elevenlabs/`; the `app/`, `lib/` and component paths below are the proposed app structure.
 
-### Phase 0: setup, contract, and proving the services (by Sat 6:00pm)
+### Ownership at a glance
 
-Everything later depends on these services, so prove each one with a short script before building on it.
+| Owner | Main responsibility | Files they own |
+|---|---|---|
+| **Preetam** | All voice input/output, audio processing, delivery metrics and reusable voice UI | `elevenlabs/`, `lib/elevenlabs.ts`, `lib/transcribe.ts`, `lib/delivery.ts`, optional `lib/gemini.ts`, `app/api/speak/route.ts`, `components/voice/`, `hooks/useRecorder.ts`, `scripts/pregenerate.ts`, generated bank audio |
+| **Teammate 1** | Question selection, Claude feedback and coach logic, Supermemory, session state and progress data | All other `app/api/` route files, `lib/claude.ts`, `lib/memory.ts`, `lib/sessionLog.ts`, `lib/session.ts`, `data/questions.hha.json`, `data/seed/`, `scripts/seed.ts` |
+| **Teammate 2** | App setup, shared types and example responses, screen layouts, navigation, integration and demo presentation | Next.js configuration, `app/` pages and layouts, global styles, components outside `components/voice/`, `types/contracts.ts`, `data/fake/`, progress and coach panels, hosting configuration |
 
-| Task | Owner | What | Done when |
-|---|---|---|---|
-| Setup | Both | Repo, Next.js app, `.env.local` (git-ignored), README line crediting AI tools | The app runs locally |
-| Contract | Both | Agree the route shapes in this document; save a fake response for each under `data/fake/` | B can draw every screen from fake data |
-| A0 | A | One script per service: Polly audio plus timings; Transcribe streaming on a PCM clip in English and in Spanish; Supermemory add then profile in instant mode; one Claude call with structured output | Each script prints a real result |
-| A1 | A, with our Spanish speaker | Question bank for home health aide | 8–10 questions, each with a type, in English and Spanish |
+Preetam owns the reusable recorder/player components even though they run in the browser. Teammate 2 places and styles their containers on the screens. Teammate 1 owns `/api/answer` and `/api/coach` as the coordinator; Preetam supplies their speech helpers. This keeps each route file under one owner.
 
-### Phase 1: text loop (by Sat 7:30pm)
+### Preetam: voice and audio
 
-| Task | Owner | What | Done when |
-|---|---|---|---|
-| A2 | A | Content feedback from a typed answer, with the accent rules in the prompt | Three typed answers get sensible feedback in Spanish |
-| A3 | A | `question/next` | It picks a weak-spot type first |
-| B1 | B | Interview screen on fake data: face area, captions, microphone button, feedback panel | Every state renders |
-| B2 | B | Setup screen: role, pasted posting, "answer in Spanish first" | Starting a session calls `session/start` |
+| Task | Deliverable | Ready when |
+|---|---|---|
+| P1 | Keep `elevenlabs/sample.py` as the simple Python SDK example; choose English and Spanish-capable voice settings | A teammate can generate and listen to an MP3 using the root `.env` |
+| P2 | Official SDK adapter in `lib/elevenlabs.ts` and `POST /api/speak`; convert character timestamps to word timings | Returns the documented `audioBase64`, `words`, empty `visemes` and `mouthTimingSource: "none"` |
+| P3 | Reusable microphone capture hook and recorder control; 16 kHz mono signed 16-bit PCM | Produces PCM bytes, recording state and stop/cancel controls; handles denied microphone permission and releases the mic |
+| P4 | `lib/transcribe.ts`: English/Spanish transcription with word start/end times and confidence | Teammate 1 can pass recorded PCM and receive the transcription shape below |
+| P5 | `lib/delivery.ts`: start delay, pace, speaking time, pauses and candidate unclear words | Returns the documented delivery object from transcription timings; no accent or pronunciation score |
+| P6 | Reusable question/coach audio player with timing-based caption highlighting, repeat and 0.75 speed | Playback follows `audio.currentTime`, including pause, seek, repeat and speed changes; audio stops before recording |
+| P7 | Cached single-word speech at 0.5 speed; optional approximate mouth animation | The selected word can be replayed without regenerating it; mouth movement is never described as phonetic teaching |
+| P8 | Pre-generate bank question audio and timing JSON; cache by text, voice, model and synthesis settings | Bank questions still play when new speech generation is unavailable |
+| P9, optional | Gemini audio observations, bounded to 4 seconds; external lip sync only if time remains | Notes can be skipped without blocking feedback; real visemes are a separate stretch feature |
 
-Checkpoint: a typed answer returns real feedback on the real screen.
+Start now: P1, then P2 and P3. Use the existing Python client sample as the reference for the ElevenLabs response. Keep server credentials out of player and recorder components.
 
-### Phase 2: spoken turn (by Sat 10:00pm)
+### Teammate 1: interview intelligence and data
 
-| Task | Owner | What | Done when |
-|---|---|---|---|
-| A4 | A | `speak`: Polly audio and timings in parallel, same voice, cached | One sentence returns audio, mouth events and word events |
-| A5 | A | `answer`: PCM in, Transcribe streaming, transcript with word timings and confidence | A 20-second clip returns in a few seconds |
-| B3 | B | Capture 16 kHz mono PCM in the browser and send it; recording and thinking states | The server receives a clip Transcribe accepts |
-| B4 | B | Play the question; captions that switch language; speed through `playbackRate`; repeat button | Works on a bank question |
-| B5 | B | Feedback panel, Spanish and English side by side: content, then delivery | Renders the full `feedback` object |
+| Task | Deliverable | Ready when |
+|---|---|---|
+| T1 | Bilingual home-health-aide question bank, fixed question types, seeded Maria and job posting | The question picker can return a complete question without a live model call |
+| T2 | Claude adapter for question selection, content and delivery feedback, and Spanish coach replies | Structured output matches the contracts; sample answers use only learner-provided details and never judge accent |
+| T3 | `/api/session/start`, `/api/question/next`, session state and optional job-posting questions | A session retains its role, posting, current question and answer history |
+| T4 | `/api/answer` coordinator | Calls Preetam's transcription and delivery helpers, gets optional audio notes, calls Claude, then saves the turn |
+| T5 | Supermemory profile load/save plus local fallback; session log and `/api/progress` | A new session can target a prior weak spot and return progress rows |
+| T6 | `/api/coach` coordinator | Accepts typed Spanish or calls Preetam's transcription helper; gets Claude's reply and calls Preetam's speech helper |
+| T7 | `/api/demo/seed`, `/api/demo/reset`, and seed script | Resets Maria's memory fallback, session state and session log consistently |
+| T8, optional | Resume ingestion | Adds learner-provided history only after the core demo works |
 
-Checkpoint: our Spanish speaker completes one full spoken turn without touching the keyboard.
+Start now: T1 and T2 with typed answers. Build T3 and the memory fallback while Preetam builds speech. Use example transcription objects to develop T4 before real recordings are ready. Keep speech synthesis/transcription implementation in Preetam's helpers, rather than duplicating it inside routes.
 
-### Phase 3: delivery, memory and the face (by Sun 12:30am)
+### Teammate 2: application and screens
 
-| Task | Owner | What | Done when |
-|---|---|---|---|
-| A6 | A | Delivery analyser in plain code | A rushed answer and a halting answer give clearly different numbers |
-| A7 | A | Delivery feedback added to the Claude call | Neither answer's feedback mentions accent |
-| A8 | A | Memory: set buckets, add after each answer, read the profile at session start, local fallback copy | After a restart, the first question targets last session's weak spot |
-| B6 | B | Talking face, following "Talking face: 2D lip sync at no cost." Two-hour cap | The mouth closes on m, b and p in sync, and stays in sync at 0.75 speed |
+| Task | Deliverable | Ready when |
+|---|---|---|
+| U1 | Next.js/TypeScript scaffold, shared contracts and example route responses | All three can run the same app; screens can be built from local example data |
+| U2 | Setup screen: role, pasted posting and Spanish-first option | Starts a session and navigates to its first question |
+| U3 | Interview screen and turn state machine | Setup -> question -> answer -> feedback -> retry/next works with example data; recording/thinking/error states are clear |
+| U4 | Bilingual feedback panel and word-practice action | Displays good/fix/sample answer plus delivery feedback; hides delivery feedback for Spanish answers |
+| U5 | Integrate Preetam's player, recorder, caption and replay components | Passes text/audio/word timings and receives recorded PCM without owning the audio internals |
+| U6 | Spanish coach panel and return-to-interview behavior | Preserves the question or feedback state, holds the coach thread and restarts the answer delay clock after returning |
+| U7 | Progress screen, reset control, empty/loading/error states | Shows only the learner's own session comparisons and supports demo reset |
+| U8 | Local demo integration, optional Vercel setup, README presentation and demo recording | The complete flow runs from the app; public deployment happens only when the team authorizes it |
 
-### Phase 4: coach in Spanish and word replay (by Sun 2:30am)
+Start now: U1, then U2 through U4 against example data. Create empty slots for the voice components. Preetam supplies their internals; Teammate 2 connects them to navigation and API calls.
 
-| Task | Owner | What | Done when |
-|---|---|---|---|
-| A13 | A | `coach`: Spanish in, Claude as coach with the turn's context, Spanish voice out | A Spanish question about the feedback gets a Spanish answer with English phrases listed |
-| B10 | B | Coach panel: button on the question and feedback screens, thread view, "Volver a la entrevista" | Returning lands on the same question, and the start-delay clock restarts |
-| B7 | B | Slow word replay with the mouth zoomed | The picked word plays at half speed, in sync |
-| A9 | A | Session log and `progress` | Two sessions return two rows |
+### Handoffs: agree these before coding against each other
 
-### Phase 5: demo data and extras (by Sun 4:00am)
+Teammate 2 records these shapes in `types/contracts.ts`; each owner supplies one example result. The API contracts earlier in this file remain the browser-facing source of truth.
 
-| Task | Owner | What | Done when |
-|---|---|---|---|
-| A10 | A | Seed and reset scripts; pre-generate the bank audio | Reset then seed gives the same Maria every time |
-| A11 | A | Questions from a pasted job posting | One question names a requirement from the posting |
-| A14 | A | Gemini behaviour notes with a 4-second limit (optional) | Kept only if its notes on our speaker's recording are specific and fair |
-| B8 | B | Progress view | Shows Maria's seeded sessions and tonight's |
-| B9 | B | Polish: reset button, error messages, loading states | A stranger can use it without help |
+| Producer -> consumer | Handoff | Integration rule |
+|---|---|---|
+| Teammate 1 -> Preetam/Teammate 2 | Question `{ id, type, source, textEn, textEs }` | English is spoken for interviews; translated captions are selectable |
+| Preetam -> Teammate 2 | Speech `{ audioBase64, words: [{ value, timeMs, endMs }], visemes: [], mouthTimingSource: "none" }` | JSON audio is raw MP3 base64; the player adds the data URL prefix. Timings are milliseconds |
+| Preetam -> Teammate 2 -> Teammate 1 | Recorder returns `{ audio: Blob, durationMs }`; the screen submits multipart `audio`, `sessionId`, `questionId`, `language` | The blob contains raw 16 kHz mono signed 16-bit PCM, not WebM. Capture begins when question playback ends; after a coach interruption, it restarts when the learner returns and starts answering |
+| Preetam -> Teammate 1 | `transcribe(pcm, language)` -> `{ transcript, words: [{ text, startMs, endMs, confidence }] }` | `language` is `en-US` or `es-US`; Preetam converts service seconds to app milliseconds |
+| Preetam -> Teammate 1 | `analyzeDelivery(words)` -> the `delivery` object in `/api/answer` | Relative times start at recording start; retain initial silence so start delay remains meaningful |
+| Preetam -> Teammate 1 | Optional `observeAudio(pcm)` -> short notes or `null` | A timeout or failed optional call must not prevent a response |
+| Teammate 1 -> Teammate 2 | Complete `/api/answer`, session, coach and progress responses | Teammate 1 owns assembling responses and persistence; Teammate 2 owns rendering and navigation |
+| Teammate 2 -> Preetam | Component props for recorder/player and callbacks for ready/stopped/error | Agree once in shared types; changes are coordinated before either side relies on them |
 
-Sunday 4:00am to 7:00am is buffer: sleep, or catch up. **Feature freeze at 7:00am.**
+For Spanish coach speech, Teammate 1 calls Preetam's shared speech helper directly on the server; it does not make an HTTP call back into its own `/api/speak` route. Return the same word-timing fields with coach audio so Preetam's player can be reused. The existing coach contract's audio fields are extended with `words`, matching `/api/speak`.
 
-### Phase 6: rehearse and submit (Sun 7:00am to 10:30am)
+### Parallel build order and checkpoints
 
-1. Run the full demo twice with the headset microphone. Fix only what breaks the demo.
-2. Record the two-minute video and a screen recording to fall back on.
-3. Finish the README credits and the Devpost write-up, and select each prize.
-4. Submit by 10:30am.
+Times below are the team's existing planning targets, not verified event requirements. Submission target remains Sunday 10:30am MST, ahead of the 11:00am deadline in the brief.
 
-### Also tonight, before people leave
+| Target | Preetam | Teammate 1 | Teammate 2 | Team checkpoint |
+|---|---|---|---|---|
+| First 30 minutes | Voice sample and helper shapes | Question bank and feedback shape | Scaffold, shared types and example responses | Agree payloads, file ownership and local configuration |
+| Sat 7:30pm | Speech adapter and recorder in progress | Typed feedback and first question | Setup/interview/feedback screens on example data | Text loop works on screen |
+| Sat 10:00pm | Speech, PCM recording, transcription and player | `/api/answer` calls voice helpers and Claude | Connect real voice components and answer route | Hear a question, answer aloud, see bilingual feedback |
+| Sun 12:30am | Delivery metrics, slow replay, cached bank audio | Memory, session state and delivery feedback | Feedback actions and loading/error states | Next session targets an earlier weak spot |
+| Sun 2:30am | Spanish voice input/output helpers | Coach logic and route | Coach panel and return behavior | Spanish side conversation returns to the same interview state |
+| Sun 4:00am | Finish audio integration; optional Gemini kept or dropped | Seed/reset, session log and posting questions | Progress view and demo reset | Seeded demo runs end to end |
+| Sun 7:00am | Fix voice issues only | Fix service/data issues only | Fix integration/UI issues only | Feature freeze |
+| Sun 9:00am | Headset/audio rehearsal | Review feedback and memory beat | Capture demo video and screen recording | Two clean rehearsals |
+| Sun 10:30am | All three finish submission together | All three | All three | Submit with buffer |
 
-Talk to two non-native English speakers (questions are in `TEAM_BRIEF.md` under "Validate tonight") and put one real quote in the pitch.
+### Shared work and scope cuts
 
-### If we fall behind
+All three validate the problem with two non-native English speakers, ask the Spanish-speaking teammate to review wording, rehearse with the headset and finish the Devpost write-up and credits. These are manual integration checkpoints; this plan does not add a test suite.
 
-Cut in this order: resume upload, extra roles, the Gemini layer, job-posting questions, the coach side conversation, then the moving mouth (keep a still face). Never cut the spoken turn, the bilingual feedback, or the memory beat.
+If time slips, cut resume upload, extra roles, optional Gemini, external lip sync, job-posting generation, coach side conversation, then moving-mouth animation. Keep the spoken turn, bilingual feedback and memory beat. Preetam's first priority is usable speech input/output, not avatar polish.
 
 ## Not verified yet
 
 Check each of these in the first hours, before building on it:
 
-1. Our AWS credentials can call Polly and Transcribe streaming, in a region that offers both.
-2. The Polly voice we pick returns mouth-shape timings. Not every Polly voice type may.
+1. Our AWS credentials can call Transcribe streaming in the chosen region, and our ElevenLabs key can generate speech.
+2. The ElevenLabs voice/model we pick returns audio and character alignment; any external lip-sync stage is tested separately.
 3. Transcribe streaming handles Spanish (`es-US`) as well as English.
 4. Whether Transcribe keeps "um" and "uh" in its output. If it drops them, fillers leave the confidence signal.
 5. Gemini gives useful notes on delivery from a recording of our Spanish speaker.
 6. The end-to-end wait is under 8 seconds.
 7. Claude access: Anthropic key, or Bedrock model access on our AWS account.
 8. The delivery thresholds, tried on real answers.
-9. A Spanish Polly voice returns mouth-shape timings for the coach.
+9. Our chosen ElevenLabs voice speaks Spanish clearly and returns character alignment for the coach.
 10. Slowed playback (`playbackRate` 0.5) still sounds clear enough for the word replay.
 
 ## Sources
 
-- Amazon Polly speech marks: https://docs.aws.amazon.com/polly/latest/dg/speechmarks.html
+- ElevenLabs speech with character timing: https://elevenlabs.io/docs/api-reference/text-to-speech/convert-with-timestamps
 - Amazon Transcribe streaming: https://docs.aws.amazon.com/transcribe/latest/dg/streaming.html
 - Amazon Transcribe input formats: https://docs.aws.amazon.com/transcribe/latest/dg/input.html
 - Amazon Transcribe word-level confidence: https://aws.amazon.com/about-aws/whats-new/2021/03/amazon-transcribe-supports-word-level-confidence-scores-for-streaming-transcription

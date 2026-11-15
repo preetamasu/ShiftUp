@@ -6,3 +6,8 @@
 # Dependencies and build output
 node_modules/
 .next/
+
+# Local voice sample output
+samples/elevenlabs/output/
+!samples/elevenlabs/.env.example
+elevenlabs/
