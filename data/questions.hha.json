@@ -1,0 +1,92 @@
+[
+  {
+    "id": "hha_why_01",
+    "type": "why_this_job",
+    "source": "bank",
+    "textEn": "Why do you want to work as a home health aide with our agency?",
+    "textEs": "¿Por qué quiere trabajar como asistente de salud en el hogar con nuestra agencia?",
+    "askingEn": "They want a reason that is about caring for people, and one thing you know about this agency. Saying it is only for the money is not enough.",
+    "askingEs": "Quieren una razón que tenga que ver con cuidar a las personas, y algo que usted sepa de esta agencia. Decir que es solo por el dinero no basta."
+  },
+  {
+    "id": "hha_care_01",
+    "type": "client_care",
+    "source": "bank",
+    "textEn": "Tell me about a time you cared for a client who was upset or refused help. What did you do?",
+    "textEs": "Cuénteme de una vez que atendió a un cliente que estaba molesto o que rechazó su ayuda. ¿Qué hizo usted?",
+    "askingEn": "They want one real example: what happened, what you did, and how it ended. They are checking that you stay calm and respect the client.",
+    "askingEs": "Quieren un ejemplo real: qué pasó, qué hizo usted y cómo terminó. Quieren ver que usted mantiene la calma y respeta al cliente."
+  },
+  {
+    "id": "hha_conflict_01",
+    "type": "conflict",
+    "source": "bank",
+    "textEn": "Tell me about a time you disagreed with a coworker or a client's family member. How did you handle it?",
+    "textEs": "Cuénteme de una vez que no estuvo de acuerdo con un compañero de trabajo o con un familiar de un cliente. ¿Cómo lo manejó?",
+    "askingEn": "They are not asking who was right. They want to hear that you listened, stayed respectful and looked for a solution.",
+    "askingEs": "No preguntan quién tenía la razón. Quieren oír que usted escuchó, mantuvo el respeto y buscó una solución."
+  },
+  {
+    "id": "hha_reliability_01",
+    "type": "reliability",
+    "source": "bank",
+    "textEn": "This job requires arriving on time every day. How do you make sure you are never late?",
+    "textEs": "Este trabajo requiere llegar a tiempo todos los días. ¿Cómo se asegura de no llegar tarde nunca?",
+    "askingEn": "They want your plan, not a promise: how you get to work, and what you do if the bus or the car fails.",
+    "askingEs": "Quieren su plan, no una promesa: cómo llega al trabajo y qué hace si falla el autobús o el carro."
+  },
+  {
+    "id": "hha_safety_01",
+    "type": "safety_physical",
+    "source": "bank",
+    "textEn": "Can you move a client safely? Describe how you would help someone from the bed to a chair.",
+    "textEs": "¿Puede mover a un cliente de forma segura? Describa cómo ayudaría a una persona a pasar de la cama a una silla.",
+    "askingEn": "They want the steps in order, and to hear that you keep the client safe and tell them what you are going to do.",
+    "askingEs": "Quieren los pasos en orden, y oír que usted cuida la seguridad del cliente y le explica lo que va a hacer."
+  },
+  {
+    "id": "hha_care_02",
+    "type": "client_care",
+    "source": "bank",
+    "textEn": "How do you remind a client to take their medication on schedule?",
+    "textEs": "¿Cómo le recuerda a un cliente que tome sus medicamentos a la hora indicada?",
+    "askingEn": "They want a method you really use, such as a schedule or a pill box, and to hear that you tell the nurse or the family if the client does not take it.",
+    "askingEs": "Quieren un método que usted de verdad usa, como un horario o un pastillero, y oír que avisa a la enfermera o a la familia si el cliente no la toma."
+  },
+  {
+    "id": "hha_availability_01",
+    "type": "availability",
+    "source": "bank",
+    "textEn": "What days and hours can you work? Are you available on weekends?",
+    "textEs": "¿Qué días y en qué horario puede trabajar? ¿Está disponible los fines de semana?",
+    "askingEn": "They want a clear, honest answer: the days, the hours, and whether you can work weekends. Say what you can do before what you cannot.",
+    "askingEs": "Quieren una respuesta clara y honesta: los días, las horas y si puede trabajar los fines de semana. Diga primero lo que sí puede hacer."
+  },
+  {
+    "id": "hha_safety_02",
+    "type": "safety_physical",
+    "source": "bank",
+    "textEn": "What would you do if a client fell while you were caring for them?",
+    "textEs": "¿Qué haría si un cliente se cae mientras usted lo está cuidando?",
+    "askingEn": "They want the steps in order: stay calm, check if the client is hurt, call for help, and tell the agency. They are checking that you follow the rules.",
+    "askingEs": "Quieren los pasos en orden: mantener la calma, ver si el cliente está lastimado, pedir ayuda y avisar a la agencia. Quieren ver que usted sigue las reglas."
+  },
+  {
+    "id": "hha_reliability_02",
+    "type": "reliability",
+    "source": "bank",
+    "textEn": "Tell me about a time you had to finish a task without supervision.",
+    "textEs": "Cuénteme de una vez que tuvo que terminar una tarea sin supervisión.",
+    "askingEn": "They want one real example that shows they can trust you when nobody is watching: what the task was, what you did, and how it ended.",
+    "askingEs": "Quieren un ejemplo real que muestre que pueden confiar en usted cuando nadie está mirando: cuál era la tarea, qué hizo y cómo terminó."
+  },
+  {
+    "id": "hha_care_03",
+    "type": "client_care",
+    "source": "bank",
+    "textEn": "How do you help a client with bathing or dressing while respecting their dignity?",
+    "textEs": "¿Cómo ayuda a un cliente a bañarse o vestirse respetando su dignidad?",
+    "askingEn": "They want to hear respect: you explain each step, keep the client covered, and let them do what they can by themselves.",
+    "askingEs": "Quieren oír respeto: usted explica cada paso, mantiene cubierto al cliente y deja que haga por sí mismo lo que pueda."
+  }
+]

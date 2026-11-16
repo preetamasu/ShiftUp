@@ -1,0 +1,25 @@
+{
+  "note": "Invented demo history, loaded under whatever name is typed on the setup page. {name} is replaced with that name.",
+  "about": "{name} speaks Spanish, works as a home health aide, and is practising for an English interview for a better-paying job at a home care agency.",
+  "profile": {
+    "stories": [
+      "Cared for an elderly client with dementia for three years",
+      "Calmed a client who refused to take her medication by making a schedule with her",
+      "Covered extra weekend shifts when a coworker was sick"
+    ],
+    "weakSpots": [
+      "conflict",
+      "long pauses before starting"
+    ]
+  },
+  "jobPosting": "Home Health Aide, Desert Bloom Home Care (sample posting). $19.50 an hour. Requirements: one year of caregiving experience; experience with dementia care preferred; able to assist clients with bathing, dressing and mobility; remind clients to take medication; reliable transportation; available some weekends; clear communication with clients, families and nurses.",
+  "resume": "{name}\nPhoenix, Arizona\nLanguages: Spanish (first language), English (conversational)\n\nSUMMARY\nHome caregiver with five years of experience caring for older adults in their homes, including three years of dementia care. Reliable, patient, and calm with clients and their families.\n\nEXPERIENCE\n\nPrivate home caregiver, Phoenix, AZ (2023 to present)\n- Care for an elderly client with dementia: bathing, dressing, meals, and safe transfers from the bed to a chair.\n- Made a daily medication schedule with the client after she refused her medication. She now takes it on time.\n- Tell the client's daughter about changes in mood, appetite, and health every week.\n\nCaregiver, Sunrise Home Care (sample employer), Mesa, AZ (2021 to 2023)\n- Helped four clients a week with personal care, light housekeeping, and meal preparation.\n- Covered extra weekend shifts when coworkers were sick.\n- Arrived on time for every shift for two years.\n\nTRAINING\n- CPR and First Aid certificate (2025)\n- Caregiver training course, 40 hours (2021)\n- English classes at an adult school (2024 to present)\n\nSKILLS\nDementia care, personal care, safe transfers, medication reminders, meal preparation, Spanish and English",
+  "sessions": [
+    { "sessionId": "s_2026-11-10_seed01", "date": "2026-11-10", "startDelayMs": 8200, "longPauses": 4, "paceWpm": 96, "weakSpot": "conflict" },
+    { "sessionId": "s_2026-11-10_seed01", "date": "2026-11-10", "startDelayMs": 7400, "longPauses": 4, "paceWpm": 101, "weakSpot": null },
+    { "sessionId": "s_2026-11-10_seed01", "date": "2026-11-10", "startDelayMs": 6900, "longPauses": 3, "paceWpm": 104, "weakSpot": "conflict" },
+    { "sessionId": "s_2026-11-12_seed02", "date": "2026-11-12", "startDelayMs": 5600, "longPauses": 3, "paceWpm": 109, "weakSpot": "conflict" },
+    { "sessionId": "s_2026-11-12_seed02", "date": "2026-11-12", "startDelayMs": 5100, "longPauses": 2, "paceWpm": 112, "weakSpot": null },
+    { "sessionId": "s_2026-11-12_seed02", "date": "2026-11-12", "startDelayMs": 4700, "longPauses": 2, "paceWpm": 115, "weakSpot": null }
+  ]
+}
